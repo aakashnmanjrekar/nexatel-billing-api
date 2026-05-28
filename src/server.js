@@ -235,9 +235,6 @@ const line_items = invoice.line_items;
     billing_period: period,
     total_amount: invoice.total_amount,
     currency: invoice.currency,
-    due_date: invoice.due_date,
-    status: invoice.status,
-    queried_charge_type: charge_type || null,
     line_items
   });
 });

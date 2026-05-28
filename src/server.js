@@ -229,13 +229,7 @@ app.get("/billing/v1/invoices/:account_id/lineitems", authenticate, (req, res) =
   }
 
   // If a charge_type is specified, flag the matching line item
-  const line_items = invoice.line_items.map(item => ({
-    ...item,
-    highlighted: charge_type
-      ? item.category.toLowerCase().includes(charge_type.toLowerCase())
-      : false
-  }));
-
+const line_items = invoice.line_items;
   res.json({
     account_id,
     billing_period: period,

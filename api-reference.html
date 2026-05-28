@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexaTel Billing API – Reference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,14,26,0.95);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 14px; font-weight: 600; color: #fff;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .logo-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .badge {
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: calc(100vh - 65px); }
+
+  nav {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 65px;
+    height: calc(100vh - 65px);
+    overflow-y: auto;
+  }
+  .nav-section { padding: 0 16px 20px; }
+  .nav-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  nav a {
+    display: block;
+    padding: 6px 12px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  nav a:hover, nav a.active {
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+
+  main { flex: 1; padding: 40px; max-width: 900px; }
+
+  /* ── Sections ── */
+  section { margin-bottom: 60px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  h2 {
+    font-size: 18px; font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  p { color: #94a3b8; font-size: 14px; margin-bottom: 16px; }
+
+  /* ── Overview cards ── */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card-icon { font-size: 22px; margin-bottom: 10px; }
+  .card-label { font-size: 11px; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-value { font-size: 20px; font-weight: 700; margin: 4px 0 4px; }
+  .card-sub { font-size: 12px; color: var(--muted); }
+
+  /* ── Auth box ── */
+  .auth-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .key-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .key-row:last-child { margin-bottom: 0; }
+  .key-label { color: var(--muted); min-width: 90px; font-size: 11px; }
+  .key-value { color: var(--accent); flex: 1; }
+  .env-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--sans);
+  }
+  .env-test { background: rgba(16,185,129,0.15); color: var(--green); }
+  .env-sandbox { background: rgba(124,58,237,0.15); color: #a78bfa; }
+
+  /* ── Endpoint cards ── */
+  .endpoint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .endpoint-header {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .endpoint-header:hover { background: var(--surface2); }
+  .method {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 5px;
+    min-width: 50px; text-align: center;
+  }
+  .method.get { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .endpoint-path {
+    font-family: var(--mono); font-size: 14px; color: var(--text); flex: 1;
+  }
+  .endpoint-desc { font-size: 12px; color: var(--muted); }
+  .webhook-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 4px;
+    background: rgba(0,212,255,0.1); color: var(--accent);
+    font-family: var(--mono); border: 1px solid rgba(0,212,255,0.2);
+    white-space: nowrap;
+  }
+  .endpoint-body {
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .endpoint-body.collapsed { display: none; }
+
+  /* ── Params table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+  th { text-align: left; padding: 8px 12px; background: var(--surface2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: #94a3b8; vertical-align: top; }
+  td:first-child { font-family: var(--mono); color: var(--accent); font-size: 12px; }
+  td .required { color: var(--red); font-size: 10px; margin-left: 4px; }
+  td .optional { color: var(--muted); font-size: 10px; margin-left: 4px; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #94a3b8;
+    overflow-x: auto;
+    line-height: 1.7;
+    margin: 12px 0;
+  }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .key { color: #93c5fd; }
+  .bool { color: #f9a8d4; }
+  .comment { color: #475569; }
+
+  /* ── Customer table ── */
+  .customer-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    margin-bottom: 24px;
+  }
+  .customer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 14px;
+  }
+  .customer-id {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .customer-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .customer-plan { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .scenario-tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 4px;
+    background: rgba(245,158,11,0.1); color: var(--orange);
+    border: 1px solid rgba(245,158,11,0.2);
+    display: inline-block;
+    line-height: 1.5;
+  }
+
+  /* ── Deployment steps ── */
+  .deploy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .deploy-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .deploy-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .deploy-logo {
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    font-family: var(--mono);
+  }
+  .render { background: #46e3b7; color: #0a0e1a; }
+  .railway { background: #7c3aed; color: white; }
+  .deploy-name { font-size: 15px; font-weight: 600; }
+  .deploy-sub { font-size: 11px; color: var(--muted); }
+  .step { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent); font-size: 11px; font-family: var(--mono);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-text { color: #94a3b8; line-height: 1.5; }
+  .step-text code {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--surface2); color: var(--accent);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* ── Webhook config table ── */
+  .wh-grid { display: grid; gap: 12px; }
+  .wh-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .wh-name {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .wh-url {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--surface2); padding: 8px 12px;
+    border-radius: 6px; color: #94a3b8;
+    margin-bottom: 8px; word-break: break-all;
+  }
+  .wh-url .param { color: #f9a8d4; }
+  .wh-trigger { font-size: 12px; color: var(--muted); }
+  .wh-trigger span { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">N</div>
+    <div>
+      <div class="logo-text">NexaTel Billing API</div>
+      <div class="logo-sub">Mock Telecom Billing · v1.0</div>
+    </div>
+  </div>
+  <div class="badge">Sprinklr Invoice Bot · Integration Reference</div>
+</header>
+
+<div class="layout">
+  <nav>
+    <div class="nav-section">
+      <div class="nav-label">Getting Started</div>
+      <a href="#overview" class="active">Overview</a>
+      <a href="#auth">Authentication</a>
+      <a href="#customers">Test Customers</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Endpoints</div>
+      <a href="#endpoint-health">Health Check</a>
+      <a href="#endpoint-lookup">Customer Lookup</a>
+      <a href="#endpoint-current">Current Invoice</a>
+      <a href="#endpoint-specific">Specific Month</a>
+      <a href="#endpoint-range">Date Range</a>
+      <a href="#endpoint-lineitems">Line Items</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Sprinklr Setup</div>
+      <a href="#webhooks">Webhook Config</a>
+      <a href="#deploy">Deployment</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h1>NexaTel Mock Billing API</h1>
+      <p>A simulated telecom billing REST API built for the <strong>Sprinklr Invoice Explanation Bot</strong>. Designed to be the external endpoint Sprinklr Webhooks call instead of a real billing system.</p>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">👤</div>
+          <div class="card-label">Test Customers</div>
+          <div class="card-value">5</div>
+          <div class="card-sub">NXT-001 through NXT-005</div>
+        </div>
+        <div class="card">
+          <div class="card-icon">🧾</div>
+          <div class="card-label">Invoice History</div>
+          <div class="card-value">5 months</div>
+          <div class="card-sub">Jan – May 2026</div>
+        </div>
+        <div class="card">
+          <div class="card-icon">🎯</div>
+          <div class="card-label">Bot Test Cases</div>
+          <div class="card-value">TC-001–010</div>
+          <div class="card-sub">All scenarios covered</div>
+        </div>
+      </div>
+
+      <p>Each customer has a distinct billing scenario — international call spikes, roaming charges, data overage, plan upgrades, and stable bills — covering every intent type and delta analysis case in the HLD.</p>
+    </section>
+
+    <!-- Auth -->
+    <section id="auth">
+      <h2>🔐 Authentication</h2>
+      <p>All endpoints (except <code>/health</code>) require an API key.</p>
+      <div class="auth-box">
+        <h3 style="margin-bottom: 14px;">API Keys</h3>
+        <div class="key-row">
+          <span class="key-label">Header</span>
+          <span class="key-value">X-API-Key: nexatel-test-key</span>
+          <span class="env-tag env-test">Test</span>
+        </div>
+        <div class="key-row">
+          <span class="key-label">Query</span>
+          <span class="key-value">?api_key=nexatel-test-key</span>
+          <span class="env-tag env-test">Test</span>
+        </div>
+        <div class="key-row">
+          <span class="key-label">Sandbox</span>
+          <span class="key-value">nexatel-sprinklr-dev-key-2026</span>
+          <span class="env-tag env-sandbox">Sandbox</span>
+        </div>
+      </div>
+      <pre><span class="comment"># Using header (recommended for Sprinklr webhooks)</span>
+curl -H <span class="str">"X-API-Key: nexatel-test-key"</span> \
+  https://YOUR-DOMAIN/billing/v1/invoices/NXT-001</pre>
+    </section>
+
+    <!-- Customers -->
+    <section id="customers">
+      <h2>👤 Test Customers</h2>
+      <div class="customer-grid">
+        <div class="customer-card">
+          <div class="customer-id">NXT-001</div>
+          <div class="customer-name">Sophie Dubois</div>
+          <div class="customer-plan">NexaTel Premium</div>
+          <div class="scenario-tag">Intl Calls +€32.50</div>
+        </div>
+        <div class="customer-card">
+          <div class="customer-id">NXT-002</div>
+          <div class="customer-name">James Okafor</div>
+          <div class="customer-plan">NexaTel Standard</div>
+          <div class="scenario-tag">Roaming +€38.00</div>
+        </div>
+        <div class="customer-card">
+          <div class="customer-id">NXT-003</div>
+          <div class="customer-name">Priya Sharma</div>
+          <div class="customer-plan">NexaTel Basic</div>
+          <div class="scenario-tag">Data Overage +€18</div>
+        </div>
+        <div class="customer-card">
+          <div class="customer-id">NXT-004</div>
+          <div class="customer-name">Carlos Mendes</div>
+          <div class="customer-plan">NexaTel Business</div>
+          <div class="scenario-tag">Upgrade + Late Fee</div>
+        </div>
+        <div class="customer-card">
+          <div class="customer-id">NXT-005</div>
+          <div class="customer-name">Aisha Al-Rashid</div>
+          <div class="customer-plan">NexaTel Standard</div>
+          <div class="scenario-tag">Stable (TC-006)</div>
+        </div>
+      </div>
+
+      <p>Mobile numbers: NXT-001 → <code style="font-family:monospace; color: var(--accent)">0612345678</code>, NXT-002 → <code style="font-family:monospace; color: var(--accent)">0623456789</code>, etc. (+1 per customer).</p>
+    </section>
+
+    <!-- Endpoints -->
+    <section id="endpoints">
+      <h2>📡 Endpoints</h2>
+
+      <!-- Health -->
+      <div class="endpoint" id="endpoint-health">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/health</span>
+          <span class="endpoint-desc">Service health check – no auth required</span>
+        </div>
+        <div class="endpoint-body collapsed">
+          <pre>{
+  <span class="key">"status"</span>: <span class="str">"ok"</span>,
+  <span class="key">"service"</span>: <span class="str">"NexaTel Mock Billing API"</span>,
+  <span class="key">"version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="key">"timestamp"</span>: <span class="str">"2026-05-18T10:30:00.000Z"</span>
+}</pre>
+        </div>
+      </div>
+
+      <!-- Lookup -->
+      <div class="endpoint" id="endpoint-lookup">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/billing/v1/lookup?mobile=:mobile</span>
+          <span class="endpoint-desc">Resolve mobile number → Account ID</span>
+          <span class="webhook-tag">Bot Auth Step</span>
+        </div>
+        <div class="endpoint-body collapsed">
+          <p>Called after OTP verification to resolve the customer's mobile number to their Account ID, which is stored in <code>CF_Account_ID</code>.</p>
+          <table>
+            <tr><th>Param</th><th>In</th><th>Description</th></tr>
+            <tr><td>mobile<span class="required">*</span></td><td>query</td><td>Customer mobile number (e.g. 0612345678)</td></tr>
+          </table>
+          <pre>GET /billing/v1/lookup?mobile=0612345678
+X-API-Key: nexatel-test-key
+
+<span class="comment">// Response</span>
+{
+  <span class="key">"account_id"</span>: <span class="str">"NXT-001"</span>,
+  <span class="key">"mobile"</span>: <span class="str">"0612345678"</span>
+}</pre>
+        </div>
+      </div>
+
+      <!-- Current Invoice -->
+      <div class="endpoint" id="endpoint-current">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/billing/v1/invoices/:account_id</span>
+          <span class="endpoint-desc">Fetch current month's invoice</span>
+          <span class="webhook-tag">WH_Fetch_Current_Invoice</span>
+        </div>
+        <div class="endpoint-body collapsed">
+          <p>Returns the current month invoice when no <code>month</code>/<code>year</code> params are passed.</p>
+          <table>
+            <tr><th>Param</th><th>In</th><th>Description</th></tr>
+            <tr><td>account_id<span class="required">*</span></td><td>path</td><td>Customer account ID (e.g. NXT-001)</td></tr>
+          </table>
+          <pre>GET /billing/v1/invoices/NXT-001
+X-API-Key: nexatel-test-key
+
+<span class="comment">// Response – maps to CF_Current_Month_Invoice</span>
+{
+  <span class="key">"account_id"</span>: <span class="str">"NXT-001"</span>,
+  <span class="key">"billing_period"</span>: <span class="str">"2026-05"</span>,
+  <span class="key">"total_amount"</span>: <span class="num">85.40</span>,
+  <span class="key">"currency"</span>: <span class="str">"EUR"</span>,
+  <span class="key">"due_date"</span>: <span class="str">"2026-06-15"</span>,
+  <span class="key">"status"</span>: <span class="str">"Due"</span>,
+  <span class="key">"line_items"</span>: [
+    { <span class="key">"category"</span>: <span class="str">"Base Plan"</span>,           <span class="key">"amount"</span>: <span class="num">29.99</span> },
+    { <span class="key">"category"</span>: <span class="str">"International Calls"</span>, <span class="key">"amount"</span>: <span class="num">32.50</span> },
+    { <span class="key">"category"</span>: <span class="str">"Data"</span>,                <span class="key">"amount"</span>: <span class="num">15.00</span> },
+    { <span class="key">"category"</span>: <span class="str">"Taxes &amp; Fees"</span>,       <span class="key">"amount"</span>: <span class="num">7.91</span>  }
+  ]
+}</pre>
+        </div>
+      </div>
+
+      <!-- Specific Month -->
+      <div class="endpoint" id="endpoint-specific">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/billing/v1/invoices/:account_id?month=&year=</span>
+          <span class="endpoint-desc">Fetch invoice for specific month</span>
+          <span class="webhook-tag">WH_Fetch_Previous_Invoice</span>
+        </div>
+        <div class="endpoint-body collapsed">
+          <p>Used by the comparative intent to fetch the previous month. Pass <code>month=04&year=2026</code> or shorthand <code>month=2026-04</code>.</p>
+          <table>
+            <tr><th>Param</th><th>In</th><th>Description</th></tr>
+            <tr><td>account_id<span class="required">*</span></td><td>path</td><td>Customer account ID</td></tr>
+            <tr><td>month<span class="required">*</span></td><td>query</td><td>Month number (04) or YYYY-MM (2026-04)</td></tr>
+            <tr><td>year<span class="optional">opt</span></td><td>query</td><td>Year (2026) — required if month is not YYYY-MM</td></tr>
+          </table>
+          <pre>GET /billing/v1/invoices/NXT-001?month=04&year=2026
+X-API-Key: nexatel-test-key
+
+<span class="comment">// Response maps to CF_Previous_Month_Invoice</span>
+{
+  <span class="key">"billing_period"</span>: <span class="str">"2026-04"</span>,
+  <span class="key">"total_amount"</span>: <span class="num">47.90</span>,
+  ...
+}</pre>
+        </div>
+      </div>
+
+      <!-- Range -->
+      <div class="endpoint" id="endpoint-range">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/billing/v1/invoices/:account_id?from=&to=</span>
+          <span class="endpoint-desc">Fetch invoices for a date range</span>
+          <span class="webhook-tag">WH_Fetch_Invoice_Range</span>
+        </div>
+        <div class="endpoint-body collapsed">
+          <p>Used by <code>Invoice_History</code> intent. Returns all invoices between <code>from</code> and <code>to</code> periods (inclusive).</p>
+          <table>
+            <tr><th>Param</th><th>In</th><th>Description</th></tr>
+            <tr><td>from<span class="required">*</span></td><td>query</td><td>Start period in YYYY-MM format (e.g. 2026-01)</td></tr>
+            <tr><td>to<span class="required">*</span></td><td>query</td><td>End period in YYYY-MM format (e.g. 2026-03)</td></tr>
+          </table>
+          <pre>GET /billing/v1/invoices/NXT-001?from=2026-01&to=2026-03
+X-API-Key: nexatel-test-key
+
+<span class="comment">// Response</span>
+{
+  <span class="key">"account_id"</span>: <span class="str">"NXT-001"</span>,
+  <span class="key">"from"</span>: <span class="str">"2026-01"</span>,
+  <span class="key">"to"</span>: <span class="str">"2026-03"</span>,
+  <span class="key">"invoice_count"</span>: <span class="num">3</span>,
+  <span class="key">"invoices"</span>: [...]
+}</pre>
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div class="endpoint" id="endpoint-lineitems">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/billing/v1/invoices/:account_id/lineitems</span>
+          <span class="endpoint-desc">Detailed line item breakdown with charge highlighting</span>
+          <span class="webhook-tag">WH_Fetch_LineItem_Detail</span>
+        </div>
+        <div class="endpoint-body collapsed">
+          <p>Used by <code>Invoice_LineItem</code> intent. Pass <code>charge_type</code> to flag the queried line item in the response.</p>
+          <table>
+            <tr><th>Param</th><th>In</th><th>Description</th></tr>
+            <tr><td>charge_type<span class="optional">opt</span></td><td>query</td><td>Line item to highlight (e.g. International Calls, Roaming)</td></tr>
+            <tr><td>month<span class="optional">opt</span></td><td>query</td><td>Month — defaults to current</td></tr>
+            <tr><td>year<span class="optional">opt</span></td><td>query</td><td>Year — defaults to current</td></tr>
+          </table>
+          <pre>GET /billing/v1/invoices/NXT-001/lineitems?charge_type=International%20Calls
+X-API-Key: nexatel-test-key
+
+<span class="comment">// Response includes highlighted flag on matched item</span>
+{
+  <span class="key">"queried_charge_type"</span>: <span class="str">"International Calls"</span>,
+  <span class="key">"line_items"</span>: [
+    { <span class="key">"category"</span>: <span class="str">"Base Plan"</span>,           <span class="key">"amount"</span>: <span class="num">29.99</span>, <span class="key">"highlighted"</span>: <span class="bool">false</span> },
+    { <span class="key">"category"</span>: <span class="str">"International Calls"</span>, <span class="key">"amount"</span>: <span class="num">32.50</span>, <span class="key">"highlighted"</span>: <span class="bool">true</span>  },
+    ...
+  ]
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Webhooks -->
+    <section id="webhooks">
+      <h2>⚙️ Sprinklr Webhook Configuration</h2>
+      <p>Configure these in Sprinklr → <strong>Settings → Webhook Connectors</strong>. Replace <code>YOUR-DOMAIN</code> with your deployed URL.</p>
+      <div class="wh-grid">
+        <div class="wh-card">
+          <div class="wh-name">WH_Fetch_Current_Invoice</div>
+          <div class="wh-url">GET https://YOUR-DOMAIN/billing/v1/invoices/<span class="param">{{CF_Account_ID}}</span></div>
+          <div class="wh-trigger">Trigger: <span>All intents except Invoice_History</span></div>
+        </div>
+        <div class="wh-card">
+          <div class="wh-name">WH_Fetch_Previous_Invoice</div>
+          <div class="wh-url">GET https://YOUR-DOMAIN/billing/v1/invoices/<span class="param">{{CF_Account_ID}}</span>?month=<span class="param">{{prev_month}}</span>&year=<span class="param">{{prev_year}}</span></div>
+          <div class="wh-trigger">Trigger: <span>Invoice_Comparative intent only</span></div>
+        </div>
+        <div class="wh-card">
+          <div class="wh-name">WH_Fetch_Invoice_Range</div>
+          <div class="wh-url">GET https://YOUR-DOMAIN/billing/v1/invoices/<span class="param">{{CF_Account_ID}}</span>?from=<span class="param">{{start_period}}</span>&to=<span class="param">{{end_period}}</span></div>
+          <div class="wh-trigger">Trigger: <span>Invoice_History intent</span></div>
+        </div>
+        <div class="wh-card">
+          <div class="wh-name">WH_Fetch_LineItem_Detail</div>
+          <div class="wh-url">GET https://YOUR-DOMAIN/billing/v1/invoices/<span class="param">{{CF_Account_ID}}</span>/lineitems?charge_type=<span class="param">{{entity_charge_type}}</span></div>
+          <div class="wh-trigger">Trigger: <span>Invoice_LineItem intent</span></div>
+        </div>
+        <div class="wh-card">
+          <div class="wh-name">WH_Customer_Lookup (Auth)</div>
+          <div class="wh-url">GET https://YOUR-DOMAIN/billing/v1/lookup?mobile=<span class="param">{{verified_mobile}}</span></div>
+          <div class="wh-trigger">Trigger: <span>OTP verification success</span> → maps account_id → CF_Account_ID</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Deploy -->
+    <section id="deploy">
+      <h2>🚀 Deployment</h2>
+      <p>Deploy to any Node.js host. Both options below have free tiers.</p>
+      <div class="deploy-grid">
+        <div class="deploy-card">
+          <div class="deploy-header">
+            <div class="deploy-logo render">R</div>
+            <div>
+              <div class="deploy-name">Render</div>
+              <div class="deploy-sub">Recommended · Free tier available</div>
+            </div>
+          </div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Push <code>nexatel-billing-api/</code> folder to a GitHub repo</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">render.com → <strong>New → Web Service</strong> → connect repo</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Build: <code>npm install</code> · Start: <code>npm start</code></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add env var: <code>API_KEY=nexatel-sprinklr-dev-key-2026</code></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Copy URL → paste into Sprinklr webhooks</div></div>
+          <p style="margin-top:12px; font-size:11px; color:var(--muted)">⚠️ Free tier sleeps after 15 min. Upgrade to Starter $7/mo for always-on.</p>
+        </div>
+        <div class="deploy-card">
+          <div class="deploy-header">
+            <div class="deploy-logo railway">🚂</div>
+            <div>
+              <div class="deploy-name">Railway</div>
+              <div class="deploy-sub">Always-on · $5 free credits/mo</div>
+            </div>
+          </div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Push repo to GitHub</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">railway.app → <strong>New Project → Deploy from GitHub</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Railway auto-detects Node.js and deploys</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Variables → add <code>API_KEY=nexatel-sprinklr-dev-key-2026</code></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Copy generated URL → paste into Sprinklr webhooks</div></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function toggle(header) {
+    const body = header.nextElementSibling;
+    body.classList.toggle('collapsed');
+  }
+
+  // Auto-open first endpoint
+  document.querySelector('.endpoint-header').click();
+
+  // Nav smooth scroll
+  document.querySelectorAll('nav a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>

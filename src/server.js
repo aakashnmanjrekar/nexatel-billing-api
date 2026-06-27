@@ -115,10 +115,11 @@ app.get("/", (req, res) => {
 
 // ─── NEW: Mobile-First Unified Endpoint ─────────────────────────────────────────
 // GET /billing/v1/customer/invoice?mobile=&month=&year=
+// GET /billing/v1/customer/invoice?mobile=&from=YYYY-MM&to=YYYY-MM
 // Returns customer name + full invoice in a single call.
-// month and year are optional — defaults to current billing period.
+// Supports single month fetch (month+year or default) and range fetch (from+to).
 app.get("/billing/v1/customer/invoice", authenticate, (req, res) => {
-  const { mobile, month, year } = req.query;
+  const { mobile, month, year, from, to } = req.query;
 
   if (!mobile) {
     return res.status(400).json({ error: "Missing required query param: mobile" });
@@ -133,7 +134,39 @@ app.get("/billing/v1/customer/invoice", authenticate, (req, res) => {
     });
   }
 
-  // Step 2: resolve billing period
+  // Step 2: fetch customer name & plan
+  const customer = customers[account_id];
+
+  // Step 3: range fetch (from + to)
+  if (from && to) {
+    const periods = getPeriodsInRange(from, to);
+    const results = periods
+      .map(p => invoices[account_id]?.[p])
+      .filter(Boolean);
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        error: "No invoices found in range",
+        account_id,
+        from,
+        to
+      });
+    }
+
+    return res.json({
+      name: customer.name,
+      mobile: customer.mobile,
+      plan: customer.plan,
+      account_id: customer.account_id,
+      currency: customer.currency,
+      from,
+      to,
+      invoice_count: results.length,
+      invoices: results
+    });
+  }
+
+  // Step 4: single month fetch
   let period;
   if (month && year) {
     period = `${year}-${String(month).padStart(2, "0")}`;
@@ -143,16 +176,13 @@ app.get("/billing/v1/customer/invoice", authenticate, (req, res) => {
     period = getCurrentPeriod();
   }
 
-  // Step 3: fetch invoice
+  // Step 5: fetch invoice
   const invoice = invoices[account_id]?.[period];
   if (!invoice) {
     return invoiceNotFound(account_id, period, res);
   }
 
-  // Step 4: fetch customer name & plan
-  const customer = customers[account_id];
-
-  // Step 5: return everything in one response
+  // Step 6: return everything in one response
   res.json({
     name: customer.name,
     mobile: customer.mobile,

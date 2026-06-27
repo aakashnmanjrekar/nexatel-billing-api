@@ -12,6 +12,9 @@
  *   GET /billing/v1/customers/:account_id                         → account lookup
  *   GET /billing/v1/lookup?mobile=                                → mobile → account
  *
+ * NEW – Mobile-first endpoint (v2):
+ *   GET /billing/v1/customer/invoice?mobile=&month=&year=         → name + invoice by mobile
+ *
  * Auth: API key via X-API-Key header or ?api_key= query param
  */
 
@@ -82,7 +85,7 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "NexaTel Mock Billing API",
-    version: "1.0.0",
+    version: "2.0.0",
     timestamp: new Date().toISOString()
   });
 });
@@ -90,10 +93,11 @@ app.get("/health", (req, res) => {
 app.get("/", (req, res) => {
   res.json({
     service: "NexaTel Connect – Mock Billing API",
-    version: "1.0.0",
+    version: "2.0.0",
     description: "Simulated telecom billing API for Sprinklr Invoice Explanation Bot",
     docs: "/docs",
     endpoints: [
+      "GET /billing/v1/customer/invoice?mobile=&month=&year=  ← NEW: mobile-first",
       "GET /billing/v1/customers/:account_id",
       "GET /billing/v1/lookup?mobile=:mobile",
       "GET /billing/v1/invoices/:account_id",
@@ -104,6 +108,58 @@ app.get("/", (req, res) => {
     ],
     auth: "X-API-Key header or ?api_key= query param",
     test_key: "nexatel-test-key"
+  });
+});
+
+// ─── NEW: Mobile-First Unified Endpoint ─────────────────────────────────────────
+// GET /billing/v1/customer/invoice?mobile=&month=&year=
+// Returns customer name + full invoice in a single call.
+// month and year are optional — defaults to current billing period.
+app.get("/billing/v1/customer/invoice", authenticate, (req, res) => {
+  const { mobile, month, year } = req.query;
+
+  if (!mobile) {
+    return res.status(400).json({ error: "Missing required query param: mobile" });
+  }
+
+  // Step 1: resolve mobile → account_id
+  const account_id = mobileIndex[mobile];
+  if (!account_id) {
+    return res.status(404).json({
+      error: "No account found for this mobile number",
+      mobile
+    });
+  }
+
+  // Step 2: resolve billing period
+  let period;
+  if (month && year) {
+    period = `${year}-${String(month).padStart(2, "0")}`;
+  } else if (month && month.includes("-")) {
+    period = month; // accept YYYY-MM directly
+  } else {
+    period = getCurrentPeriod();
+  }
+
+  // Step 3: fetch invoice
+  const invoice = invoices[account_id]?.[period];
+  if (!invoice) {
+    return invoiceNotFound(account_id, period, res);
+  }
+
+  // Step 4: fetch customer name & plan
+  const customer = customers[account_id];
+
+  // Step 5: return everything in one response
+  res.json({
+    name: customer.name,
+    mobile: customer.mobile,
+    plan: customer.plan,
+    account_id: customer.account_id,
+    billing_period: invoice.billing_period,
+    total_amount: invoice.total_amount,
+    currency: invoice.currency,
+    line_items: invoice.line_items
   });
 });
 
@@ -119,7 +175,6 @@ app.get("/billing/v1/customers/:account_id", authenticate, (req, res) => {
       message: `No customer found with account ID ${account_id}.`
     });
   }
-  // Return customer info without sensitive fields
   res.json({
     account_id: customer.account_id,
     name: customer.name,
@@ -146,12 +201,6 @@ app.get("/billing/v1/lookup", authenticate, (req, res) => {
 
 // ─── Invoice Endpoints ──────────────────────────────────────────────────────────
 
-/**
- * WH_Fetch_Current_Invoice  →  GET /billing/v1/invoices/:account_id
- * WH_Fetch_Previous_Invoice →  GET /billing/v1/invoices/:account_id?month=&year=
- * 
- * Also handles: ?month=YYYY-MM shorthand used by Sprinklr slot filler
- */
 app.get("/billing/v1/invoices/:account_id", authenticate, (req, res) => {
   const account_id = req.params.account_id.toUpperCase();
   const { month, year, from, to } = req.query;
@@ -160,7 +209,7 @@ app.get("/billing/v1/invoices/:account_id", authenticate, (req, res) => {
     return res.status(404).json({ error: "Customer not found", account_id });
   }
 
-  // Range fetch: WH_Fetch_Invoice_Range
+  // Range fetch
   if (from && to) {
     const periods = getPeriodsInRange(from, to);
     const results = periods
@@ -184,14 +233,14 @@ app.get("/billing/v1/invoices/:account_id", authenticate, (req, res) => {
     });
   }
 
-  // Specific month fetch
+  // Specific month or current
   let period;
   if (month && year) {
     period = `${year}-${String(month).padStart(2, "0")}`;
   } else if (month && month.includes("-")) {
-    period = month; // accept YYYY-MM directly
+    period = month;
   } else {
-    period = getCurrentPeriod(); // default: current month
+    period = getCurrentPeriod();
   }
 
   const invoice = invoices[account_id]?.[period];
@@ -202,10 +251,6 @@ app.get("/billing/v1/invoices/:account_id", authenticate, (req, res) => {
   res.json(invoice);
 });
 
-/**
- * WH_Fetch_LineItem_Detail  →  GET /billing/v1/invoices/:account_id/lineitems
- * Adds description field and flags the queried category if charge_type is provided.
- */
 app.get("/billing/v1/invoices/:account_id/lineitems", authenticate, (req, res) => {
   const account_id = req.params.account_id.toUpperCase();
   const { month, year, charge_type } = req.query;
@@ -228,8 +273,7 @@ app.get("/billing/v1/invoices/:account_id/lineitems", authenticate, (req, res) =
     return invoiceNotFound(account_id, period, res);
   }
 
-  // If a charge_type is specified, flag the matching line item
-const line_items = invoice.line_items;
+  const line_items = invoice.line_items;
   res.json({
     account_id,
     billing_period: period,
@@ -246,6 +290,7 @@ app.use((req, res) => {
     path: req.path,
     available_endpoints: [
       "GET /health",
+      "GET /billing/v1/customer/invoice?mobile=&month=&year=",
       "GET /billing/v1/customers/:account_id",
       "GET /billing/v1/lookup?mobile=",
       "GET /billing/v1/invoices/:account_id",

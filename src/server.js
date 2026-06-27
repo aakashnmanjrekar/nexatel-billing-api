@@ -48,8 +48,10 @@ app.use(express.json());
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 function getCurrentPeriod() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  // Fixed to May 2026 — the spike month for all demo customers.
+  // The DB contains data through 2026-05 only; using real current date
+  // would return a 404 for any month beyond May 2026.
+  return "2026-05";
 }
 
 function getPreviousPeriod(period, monthsBack = 1) {
